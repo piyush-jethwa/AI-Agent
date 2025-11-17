@@ -59,11 +59,7 @@ def render_sidebar():
                 model = st.selectbox(
                     "Select GROQ Model",
                     [
-                        "qwen-2.5-32b",
-                        "deepseek-r1-distill-qwen-32b",
-                        "deepseek-r1-distill-llama-70b",
                         "llama-3.3-70b-versatile",
-                        "llama-3.1-8b-instant",
                         "Custom"
                     ],
                     index=0,
