@@ -63,7 +63,7 @@ input_col1, input_col2, input_col3 = st.columns([1, 3, 1])
 with input_col2:
     task_description = st.text_area(
         "What would you like to research?",
-        value="Research the latest AI Agent news in February 2025 and summarize each.",
+        value="Research the latest AI Agent",
         height=68
     )
 
