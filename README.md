@@ -4,7 +4,8 @@ A powerful research assistant built with CrewAI, Exa, and Streamlit that helps y
 
 ![CrewAI Logo](https://cdn.prod.website-files.com/66cf2bfc3ed15b02da0ca770/66d07240057721394308addd_Logo%20(1).svg)
 
-![App Screenshot](app.png)
+![App Screenshot](appp
+.png)
 
 ## 🌟 Features
 
