@@ -38,12 +38,7 @@ def render_sidebar():
         st.markdown("### ⚙️ Configuration")
         st.write("")
         with st.expander("🤖 Model Selection", expanded=True):
-            provider = st.radio(
-                "Select LLM Provider",
-                ["OpenAI", "GROQ", "Ollama"],
-                help="Choose which Large Language Model provider to use",
-                horizontal=True
-            )
+            provider = "GROQ"
             
             if provider == "OpenAI":
                 model_option = st.selectbox(
