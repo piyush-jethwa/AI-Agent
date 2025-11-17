@@ -2,7 +2,7 @@
 
 A powerful research assistant built with CrewAI, Exa, and Streamlit that helps you research any topic using AI Agents.
 
-![CrewAI Logo](https://ccdn.prod.website-files.com/66cf2bfc3ed15b02da0ca770/66d07240057721394308addd_Logo%20(1).svg)
+![CrewAI Logo](https://cdn.prod.website-files.com/66cf2bfc3ed15b02da0ca770/66d07240057721394308addd_Logo%20(1).svg)
 
 ![App Screenshot](app.png)
 
