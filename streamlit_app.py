@@ -8,6 +8,11 @@ except (ImportError, KeyError):
 
 import streamlit as st
 import os
+import re
+import plotly.express as px
+import plotly.graph_objects as go
+from fpdf import FPDF
+from datetime import datetime
 from src.components.sidebar import render_sidebar
 from src.components.researcher import create_researcher, create_research_task, run_research
 from src.utils.output_handler import capture_output
@@ -39,23 +44,12 @@ with col2:
 selection = render_sidebar()
 
 # Check API keys from st.secrets for deployment
-if selection["provider"] == "OpenAI":
-    if not st.secrets.get("OPENAI_API_KEY"):
-        st.warning("⚠️ OpenAI API key not found in Streamlit secrets")
-        st.stop()
-elif selection["provider"] == "GROQ":
-    if not st.secrets.get("GROQ_API_KEY"):
-        st.warning("⚠️ GROQ API key not found in Streamlit secrets")
-        st.stop()
+if not st.secrets.get("GROQ_API_KEY"):
+    st.warning("⚠️ GROQ API key not found in Streamlit secrets")
+    st.stop()
 
-if selection["provider"] != "Ollama":
-    if not st.secrets.get("EXA_API_KEY"):
-        st.warning("⚠️ EXA API key not found in Streamlit secrets")
-        st.stop()
-
-# Add Ollama check
-if selection["provider"] == "Ollama" and not selection["model"]:
-    st.warning("⚠️ No Ollama models found. Please make sure Ollama is running and you have models loaded.")
+if not st.secrets.get("EXA_API_KEY"):
+    st.warning("⚠️ EXA API key not found in Streamlit secrets")
     st.stop()
 
 # Create two columns for the input section
@@ -77,7 +71,7 @@ if start_research:
             # Create persistent container for process output with fixed height.
             process_container = st.container(height=300, border=True)
             output_container = process_container.container()
-            
+
             # Single output capture context.
             with capture_output(output_container):
                 researcher = create_researcher(selection)
@@ -88,26 +82,70 @@ if start_research:
             status.update(label="❌ Error occurred", state="error")
             st.error(f"An error occurred: {str(e)}")
             st.stop()
-    
+
     # Convert CrewOutput to string for display and download
     result_text = str(result)
-    
+
+    # Add to research history
+    st.session_state.research_history.append({
+        'topic': task_description,
+        'result': result_text,
+        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+
     # Display the final result
     st.markdown(result_text)
-    
+
+    # Data Visualizations
+    st.divider()
+    st.markdown("### 📊 Data Visualizations")
+    viz_col1, viz_col2 = st.columns(2)
+
+    # Extract numerical data from result_text (simple regex for percentages, numbers)
+    numbers = re.findall(r'\b\d+(?:\.\d+)?%?\b', result_text)
+    numbers = [float(n.rstrip('%')) for n in numbers if n]
+
+    if numbers:
+        with viz_col1:
+            fig = px.histogram(numbers, nbins=10, title="Distribution of Numerical Data")
+            st.plotly_chart(fig, use_container_width=True)
+
+        with viz_col2:
+            fig2 = go.Figure(data=[go.Pie(labels=[f"Value {i+1}" for i in range(len(numbers[:5]))], values=numbers[:5])])
+            fig2.update_layout(title="Top 5 Numerical Values")
+            st.plotly_chart(fig2, use_container_width=True)
+    else:
+        st.info("No numerical data found in the research report for visualization.")
+
     # Create download buttons
     st.divider()
     download_col1, download_col2, download_col3 = st.columns([1, 2, 1])
     with download_col2:
         st.markdown("### 📥 Download Research Report")
-        
+
         # Download as Markdown
         st.download_button(
-            label="Download Report",
+            label="Download as Markdown",
             data=result_text,
             file_name="research_report.md",
             mime="text/markdown",
             help="Download the research report in Markdown format"
+        )
+
+        # Download as PDF
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        for line in result_text.split('\n'):
+            pdf.cell(200, 10, txt=line, ln=True)
+        pdf_output = pdf.output(dest='S').encode('latin-1')
+
+        st.download_button(
+            label="Download as PDF",
+            data=pdf_output,
+            file_name="research_report.pdf",
+            mime="application/pdf",
+            help="Download the research report in PDF format"
         )
 
 # Add footer
