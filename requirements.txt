@@ -5,3 +5,5 @@ exa-py
 requests
 litellm
 pydantic==2.10.4
+plotly
+fpdf
