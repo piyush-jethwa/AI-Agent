@@ -185,11 +185,11 @@ def create_research_task(researcher, task_description):
 #--------------------------------#
 def run_research(researcher, task):
     """Execute the research task using the configured agent.
-    
+
     Args:
         researcher (Agent): The research agent to perform the task
         task (Task): The research task to execute
-    
+
     Returns:
         str: The research results in markdown format
     """
@@ -199,5 +199,15 @@ def run_research(researcher, task):
         verbose=True,
         process=Process.sequential
     )
-    
-    return crew.kickoff()
+
+    result = crew.kickoff()
+
+    # If result is empty, try to read from the output file
+    if not result or str(result).strip() == "":
+        try:
+            with open("output/research_report.md", "r", encoding="utf-8") as f:
+                result = f.read()
+        except FileNotFoundError:
+            result = "Research completed but no output was generated."
+
+    return result
