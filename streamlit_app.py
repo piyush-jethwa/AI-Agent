@@ -28,6 +28,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Initialize session state for research history
+if 'research_history' not in st.session_state:
+    st.session_state.research_history = []
+
 # Logo
 st.image(
     "https://cdn.prod.website-files.com/66cf2bfc3ed15b02da0ca770/66d07240057721394308addd_Logo%20(1).svg",
@@ -39,6 +43,18 @@ st.markdown("[Visit CrewAI](https://www.crewai.com/)")
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     st.title("🔍 :red[CrewAI] Research Assistant", anchor=False)
+
+# Research History Section
+if st.session_state.research_history:
+    st.divider()
+    st.markdown("### 📚 Research History")
+    selected_history = st.selectbox(
+        "Select a previous research:",
+        [f"{h['timestamp']} - {h['topic'][:50]}..." for h in st.session_state.research_history]
+    )
+    if st.button("Load Selected Research"):
+        idx = [f"{h['timestamp']} - {h['topic'][:50]}..." for h in st.session_state.research_history].index(selected_history)
+        st.markdown(st.session_state.research_history[idx]['result'])
 
 # Render sidebar and get selection (provider and model)
 selection = render_sidebar()
