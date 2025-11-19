@@ -7,3 +7,7 @@ litellm
 pydantic==2.10.4
 plotly
 fpdf
+numpy==1.26.4
+xarray==2023.6.0
+speechrecognition
+pyaudio
