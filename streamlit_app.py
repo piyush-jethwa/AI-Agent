@@ -113,7 +113,22 @@ if start_research:
                 status.update(label="✅ Research completed!", state="complete", expanded=False)
         except Exception as e:
             status.update(label="❌ Error occurred", state="error")
-            st.error(f"An error occurred: {str(e)}")
+            error_msg = str(e)
+
+            # Handle specific API errors with user-friendly messages
+            if "RateLimitError" in error_msg or "rate_limit_exceeded" in error_msg:
+                st.error("🚫 API Rate Limit Exceeded")
+                st.warning("The AI service is currently at its rate limit. This is common with free tiers. Please try again in a few seconds, or consider upgrading to a paid plan.")
+                st.info("💡 **Tips to avoid rate limits:**\n- Wait 1-2 minutes between requests\n- Use shorter research queries\n- Consider switching to a different model in the sidebar")
+                if st.button("🔄 Retry Research"):
+                    st.rerun()
+            elif "Invalid API Key" in error_msg or "invalid_api_key" in error_msg:
+                st.error("🔑 Invalid API Key")
+                st.warning("Please check your API keys in the Streamlit secrets configuration.")
+                st.info("Get your API keys from:\n- [Groq Console](https://console.groq.com/keys)\n- [Exa API](https://exa.ai/api)")
+            else:
+                st.error(f"An error occurred: {error_msg}")
+
             st.stop()
 
     # Convert CrewOutput to string for display and download
