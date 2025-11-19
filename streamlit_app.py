@@ -14,7 +14,7 @@ import plotly.graph_objects as go
 from fpdf import FPDF
 from datetime import datetime
 from src.components.sidebar import render_sidebar
-from src.components.researcher import create_crew, create_research_tasks, run_research
+from src.components.researcher import create_researcher, create_research_task, run_research
 from src.utils.output_handler import capture_output
 
 #--------------------------------#
@@ -77,23 +77,6 @@ with input_col2:
         height=68
     )
 
-    # Voice input button
-    if st.button("🎤 Voice Input"):
-        recognizer = sr.Recognizer()
-        with sr.Microphone() as source:
-            st.info("Listening... Speak your research query.")
-            try:
-                audio = recognizer.listen(source, timeout=5)
-                text = recognizer.recognize_google(audio)
-                task_description = text
-                st.success(f"Recognized: {text}")
-            except sr.UnknownValueError:
-                st.error("Could not understand audio.")
-            except sr.RequestError:
-                st.error("Speech recognition service unavailable.")
-            except Exception as e:
-                st.error(f"Error: {str(e)}")
-
 col1, col2, col3 = st.columns([1, 0.5, 1])
 with col2:
     start_research = st.button("🚀 Start Research", use_container_width=False, type="primary")
@@ -107,28 +90,13 @@ if start_research:
 
             # Single output capture context.
             with capture_output(output_container):
-                crew = create_crew(selection)
-                tasks = create_research_tasks(crew, task_description)
-                result = run_research(crew, tasks)
+                researcher = create_researcher(selection)
+                task = create_research_task(researcher, task_description)
+                result = run_research(researcher, task)
                 status.update(label="✅ Research completed!", state="complete", expanded=False)
         except Exception as e:
             status.update(label="❌ Error occurred", state="error")
-            error_msg = str(e)
-
-            # Handle specific API errors with user-friendly messages
-            if "RateLimitError" in error_msg or "rate_limit_exceeded" in error_msg:
-                st.error("🚫 API Rate Limit Exceeded")
-                st.warning("The AI service is currently at its rate limit. This is common with free tiers. Please try again in a few seconds, or consider upgrading to a paid plan.")
-                st.info("💡 **Tips to avoid rate limits:**\n- Wait 1-2 minutes between requests\n- Use shorter research queries\n- Consider switching to a different model in the sidebar")
-                if st.button("🔄 Retry Research"):
-                    st.rerun()
-            elif "Invalid API Key" in error_msg or "invalid_api_key" in error_msg:
-                st.error("🔑 Invalid API Key")
-                st.warning("Please check your API keys in the Streamlit secrets configuration.")
-                st.info("Get your API keys from:\n- [Groq Console](https://console.groq.com/keys)\n- [Exa API](https://exa.ai/api)")
-            else:
-                st.error(f"An error occurred: {error_msg}")
-
+            st.error(f"An error occurred: {str(e)}")
             st.stop()
 
     # Convert CrewOutput to string for display and download
