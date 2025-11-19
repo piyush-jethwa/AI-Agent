@@ -9,5 +9,5 @@ plotly
 fpdf
 numpy==1.26.4
 xarray==2023.6.0
-speechrecognition
-pyaudio
+# speechrecognition  # Commented out for deployment compatibility
+# pyaudio  # Commented out for deployment compatibility
