@@ -55,25 +55,25 @@ class EXAAnswerTool(BaseTool):
 #--------------------------------#
 #         LLM & Research Agent   #
 #--------------------------------#
-def create_crew(selection):
-    """Create a multi-agent crew with the specified LLM configuration.
-
+def create_researcher(selection):
+    """Create a research agent with the specified LLM configuration.
+    
     Args:
         selection (dict): Contains provider and model information
             - provider (str): The LLM provider ("OpenAI", "GROQ", or "Ollama")
             - model (str): The model identifier or name
-
+    
     Returns:
-        Crew: A configured CrewAI crew with multiple agents
-
+        Agent: A configured CrewAI agent ready for research tasks
+    
     Note:
         Ollama models have limited function-calling capabilities. When using Ollama,
-        the agents will rely more on their base knowledge and may not effectively use
+        the agent will rely more on its base knowledge and may not effectively use
         external tools like web search.
     """
     provider = selection["provider"]
     model = selection["model"]
-
+    
     if provider == "GROQ":
         llm = LLM(
             api_key=st.secrets["GROQ_API_KEY"],
@@ -103,8 +103,8 @@ def create_crew(selection):
             api_key=st.secrets["OPENAI_API_KEY"],
             model=f"openai/{model}"
         )
-
-    # Researcher Agent
+    
+    
     researcher = Agent(
         role='Research Analyst',
         goal='Conduct thorough research on given topics for the current year 2025',
@@ -112,66 +112,28 @@ def create_crew(selection):
         tools=[EXAAnswerTool()],
         llm=llm,
         verbose=True,
-        allow_delegation=True,
+        allow_delegation=False,  # Disable delegation to avoid caching
     )
-
-    # Analyst Agent
-    analyst = Agent(
-        role='Data Analyst',
-        goal='Analyze research data and extract key insights and trends',
-        backstory='Specialist in data analysis and visualization',
-        llm=llm,
-        verbose=True,
-        allow_delegation=True,
-    )
-
-    # Writer Agent
-    writer = Agent(
-        role='Content Writer',
-        goal='Compile research findings into a comprehensive, well-structured report',
-        backstory='Proficient in writing clear, engaging reports',
-        llm=llm,
-        verbose=True,
-        allow_delegation=True,
-    )
-
-    crew = Crew(
-        agents=[researcher, analyst, writer],
-        verbose=True,
-        process=Process.sequential
-    )
-    return crew
+    return researcher
 
 #--------------------------------#
 #         Research Task          #
 #--------------------------------#
-def create_research_tasks(crew, task_description):
-    """Create research tasks for the multi-agent crew to execute.
-
+def create_research_task(researcher, task_description):
+    """Create a research task for the agent to execute.
+    
     Args:
-        crew (Crew): The multi-agent crew
+        researcher (Agent): The research agent that will perform the task
         task_description (str): The research query or topic to investigate
-
+    
     Returns:
-        list: List of configured CrewAI tasks
+        Task: A configured CrewAI task with expected output format
     """
-    research_task = Task(
-        description=f"Research the topic: {task_description}. Gather comprehensive information, data, and insights from reliable sources.",
-        expected_output="Raw research data, key findings, and sources on the topic.",
-        agent=crew.agents[0],  # Researcher agent
-    )
-
-    analysis_task = Task(
-        description="Analyze the gathered research data. Extract key insights, trends, and metrics.",
-        expected_output="Analyzed data with insights, trends, and statistical information.",
-        agent=crew.agents[1],  # Analyst agent
-        context=[research_task]
-    )
-
-    writing_task = Task(
-        description="""Compile the research and analysis into a comprehensive report for the year 2025.
+    return Task(
+        description=task_description,
+        expected_output="""A comprehensive research report for the year 2025. 
         The report must be detailed yet concise, focusing on the most significant and impactful findings.
-
+        
         Format the output in clean markdown (without code block markers or backticks) using the following structure:
 
         # Executive Summary
@@ -210,32 +172,34 @@ def create_research_tasks(crew, task_description):
         - Prioritize recent and authoritative sources
         - Format as: "[Title] (URL) - [Publication Date if available]"
 
-        Note: Ensure all information is current and relevant to 2025. Include specific dates,
-        numbers, and metrics whenever possible to support findings. All claims should be properly
+        Note: Ensure all information is current and relevant to 2025. Include specific dates, 
+        numbers, and metrics whenever possible to support findings. All claims should be properly 
         cited using the sources discovered during research.
         """,
-        expected_output="A comprehensive research report in markdown format.",
-        agent=crew.agents[2],  # Writer agent
-        context=[research_task, analysis_task],
+        agent=researcher,
         output_file="output/research_report.md"
     )
-
-    return [research_task, analysis_task, writing_task]
 
 #--------------------------------#
 #         Research Crew          #
 #--------------------------------#
-def run_research(crew, tasks):
-    """Execute the research tasks using the configured multi-agent crew.
+def run_research(researcher, task):
+    """Execute the research task using the configured agent.
 
     Args:
-        crew (Crew): The multi-agent crew
-        tasks (list): List of research tasks to execute
+        researcher (Agent): The research agent to perform the task
+        task (Task): The research task to execute
 
     Returns:
         str: The research results in markdown format
     """
-    crew.tasks = tasks
+    crew = Crew(
+        agents=[researcher],
+        tasks=[task],
+        verbose=True,
+        process=Process.sequential
+    )
+
     result = crew.kickoff()
 
     # If result is empty, try to read from the output file
